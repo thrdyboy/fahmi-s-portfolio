@@ -2,16 +2,17 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react"
 import Cookies from "js-cookie"
-import { LoginData } from "<prefix>/types/account";
-import { LoginAcc } from "<prefix>/services/accountService";
+import { AccountRole, LoginData } from "<prefix>/types/account"
+import { LoginAcc } from "<prefix>/services/accountService"
 
 interface User {
     id: string | null;
     username: string | null;
+    role?: AccountRole;
 }
 
 interface AuthContextType {
-    user: User;
+    user: User | null;
     login: (dataLogin: LoginData) => Promise<boolean>;
     logout: () => void;
     isAuthenticated: boolean;
@@ -24,12 +25,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
 
     useEffect(() => {
-        const token = Cookies.get('authToken')
-        if (token) {
-            const storedUser = Cookies.get('user')
-            if (storedUser) {
-                setUser(JSON.parse(storedUser))
-                setIsAuthenticated(true)
+        const storedUser = Cookies.get('user')
+        console.log("Stored User: ", storedUser)
+
+        if (storedUser) {
+            try {
+                const parsedUser = JSON.parse(storedUser)
+                console.log('Parsed User: ', parsedUser)
+
+                if (parsedUser) {
+                    Cookies.set('authToken', parsedUser.token, { secure: true, sameSite: 'strict' })
+                    setUser(parsedUser)
+                    setIsAuthenticated(true)
+                } else {
+                    console.error("Token is missing in user Data")
+                }
+            } catch (error) {
+                console.error("User cookie is Missing. Reason: ", error)
             }
         }
     }, [])
@@ -41,8 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (!fetchData.ok) {
                 throw new Error(fetchData.error || 'Invalid Credentials')
             }
-            const { token, data } = fetchData.result
-            Cookies.set('authToken', token, { secure: true, sameSite: 'strict' })
+            const { data } = fetchData.result
             Cookies.set('user', JSON.stringify(data), { secure: true, sameSite: 'strict' })
 
             setUser(data)
@@ -55,7 +66,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const logout = () => {
-        Cookies.remove('authToken')
         Cookies.remove('user')
         setUser({ id: null, username: null })
         setIsAuthenticated(false)

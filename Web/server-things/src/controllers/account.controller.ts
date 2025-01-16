@@ -134,107 +134,65 @@ export class AccountController {
         }
     }
 
-    async createProfile(req: Request, res: Response): Promise<void> {
-        const { bio, avatarUrl, accountId } = req.body;
-
+    async getProfile(req: Request, res: Response) {
+        const { id: accountId } = req.account!
         try {
-            const existingAccount = await Prisma.account.findFirst({
-                where: { id: accountId },
-            });
-
-            if (!existingAccount) {
-                res.status(404).json({ error: "Account not found" });
-                return;
+            const Profile = await Prisma.profile.findUnique({
+                where: { accountId },
+                include: {
+                    account: {
+                        select: {
+                            role: true
+                        }
+                    }
+                }
+            })
+    
+            if (!Profile) {
+                return res.status(200).json({ message: 'Profile not Found, you should make the Profile', data: null })
             }
 
-            const profile = await Prisma.profile.create({
-                data: {
-                    bio,
-                    avatarUrl,
-                    account: { connect: { id: existingAccount.id } },
-                },
-            });
-
-            res.status(201).json({
-                message: "Profile created successfully",
-                data: {
-                    id: profile.id,
-                    bio: profile.bio,
-                    avatarUrl: profile.avatarUrl,
-                    accountId: profile.accountId,
-                },
-            });
+            return res.status(200).json({ 
+                message: "Data was Fetched",
+                data: Profile
+            })
         } catch (error) {
-            console.error("Error creating profile: ", error);
-            res.status(500).json({ error: "Internal server error" });
+            console.error("Error on fetch the Profile: ", error)
+            return res.status(500).json({ message: "Internal Server Error" })
         }
     }
 
-    async getProfile(req: Request, res: Response): Promise<void> {
-        const account = req.account;
-
-        if (!account) {
-            res.status(401).json({ error: "Unauthorized" });
-            return;
-        }
+    async createProfile(req: Request, res: Response): Promise<void> {
+        const { id: accountId } = req.account!
+        const { bio } = req.body
+        const avatarUrl = req.file?.path
 
         try {
-            if (account.role === "author") {
-                const authorAccount = await Prisma.account.findFirst({
-                    where: { id: account.id },
-                    include: {
-                        profile: true,
-                        posts: true,
-                    },
-                });
-
-                if (!authorAccount) {
-                    res.status(404).json({ error: "Author account not found" });
-                    return;
+            const profileData = {
+                bio,
+                avatarUrl,
+                account: {
+                    connect: {
+                        id: accountId
+                    }
                 }
-
-                res.status(200).json({
-                    id: authorAccount.id,
-                    name: authorAccount.name,
-                    email: authorAccount.email,
-                    username: authorAccount.username,
-                    role: authorAccount.role,
-                    profile: authorAccount.profile,
-                    posts: authorAccount.posts.map((post) => ({
-                        id: post.id,
-                        title: post.title,
-                        content: post.content,
-                    })),
-                });
-            } else if (account.role === "user") {
-                const userAccount = await Prisma.account.findFirst({
-                    where: { id: account.id },
-                    include: {
-                        profile: true,
-                    },
-                });
-
-                if (!userAccount) {
-                    res.status(404).json({ error: "User account not found" });
-                    return;
-                }
-
-                res.status(200).json({
-                    id: userAccount.id,
-                    name: userAccount.name,
-                    email: userAccount.email,
-                    username: userAccount.username,
-                    role: userAccount.role,
-                    profile: userAccount.profile,
-                });
-            } else {
-                res.status(403).json({ error: "Unrecognized role" });
             }
+
+            const newProfile = await Prisma.profile.create({
+                data: profileData,
+                include: {
+                    account: true
+                }
+            })
+
+            res.status(201).json({
+                message: "Profile Created Successfully",
+                data: newProfile
+            })
+
         } catch (error) {
-            console.error("Error fetching profile: ", error);
-            res.status(500).json({ error: "Internal server error" });
-        } finally {
-            await Prisma.$disconnect();
+            res.status(500).json({ message: "Error, Failed to make Profile" })
+            console.error("Error: ", error)
         }
     }
 }

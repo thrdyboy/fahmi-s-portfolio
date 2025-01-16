@@ -16,6 +16,8 @@ declare global {
         interface Request {
             account?: accList
             user?: User
+            file?: Express.Multer.File
+            files?: Express.Multer.File[]
         }
     }
 }

@@ -7,7 +7,6 @@ import { useAuth } from "<prefix>/context/userContext"
 import { LoginData } from "<prefix>/types/account"
 import { toast } from "react-toastify"
 import Link from "next/link"
-import Wrapper from "<prefix>/components/wrapper"
 
 const LoginScheme = Yup.object().shape({
     username: Yup.string().required('Username Required'),
@@ -37,8 +36,8 @@ export default function Login() {
     }
 
     return (
-        <Wrapper>
-            <div className="max-w-lg w-full bg-white p-8 rounded-xl shadow-lg">
+        <div className="min-h-screen flex justify-center items-center">
+            <div className="max-w-lg w-full bg-gradient-to-r from-cyan-500 to-blue-500 p-8 rounded-xl shadow-lg">
                 <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Sign In to Web Story</h1>
                 <p className="text-lg text-center text-gray-600 mb-8">Please enter your credentials to continue</p>
 
@@ -91,7 +90,7 @@ export default function Login() {
 
                                 <div className="flex justify-center items-center mt-6">
                                     <p className="text-sm text-gray-600">Do not have an account?</p>
-                                    <Link href={'/register'} className="text-blue-400 ml-2 text-sm font-semibold hover:underline">
+                                    <Link href={'/register'} className="text-blue-900 ml-2 text-sm font-semibold hover:underline">
                                         Sign up
                                     </Link>
                                 </div>
@@ -100,6 +99,6 @@ export default function Login() {
                     }}
                 </Formik>
             </div>
-        </Wrapper>
+        </div>
     )
 }

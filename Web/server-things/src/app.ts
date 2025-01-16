@@ -9,6 +9,8 @@ import express, {
 import cors from 'cors'
 import { port } from './config'
 import { AccRouter } from './routers/account.router'
+import { PostRouter } from './routers/post.router'
+import path from 'path'
 
 const corsConfig = {
     origin: 'http://localhost:3000',
@@ -31,6 +33,7 @@ export default class App {
         this.app.use(cors(corsConfig))
         this.app.use(json())
         this.app.use(urlencoded({ extended: true }))
+        this.app.use('/images', express.static(path.join(__dirname, 'public/images')))
     }
 
     private HandleError(): void {
@@ -56,7 +59,9 @@ export default class App {
 
     private routes(): void {
         const AccountRouter = new AccRouter()
+        const PostingRouter = new PostRouter()
         this.app.use('/api/account', AccountRouter.getRouter())
+        this.app.use('/api/post', PostingRouter.getRouter())
     }
 
     public start(): void {

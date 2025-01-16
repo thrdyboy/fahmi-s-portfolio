@@ -14,4 +14,8 @@ export class PostRouter {
     private initializeRoutes(): void {
         this.router.get('/motherfucker')
     }
+
+    public getRouter(): Router {
+        return this.router
+    }
 }

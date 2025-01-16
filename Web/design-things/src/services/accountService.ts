@@ -1,5 +1,5 @@
 import axios from "axios";
-import { LoginData, Profile, RegisterData } from "<prefix>/types/account";
+import { createProfile, getProfileDataResponse, LoginData, RegisterData } from "<prefix>/types/account";
 
 const AccountURL = process.env.NEXT_PUBLIC_ACCOUNT_API || "http://localhost:8000/api/account"
 export const SignUpAcc = async (RegData: RegisterData) => {
@@ -49,67 +49,62 @@ export const LoginAcc = async (LoginData: LoginData) => {
     }
 }
 
-export const getProfile = async () => {
-    const validateProfile = (data: Profile) => {
-        if (
-            typeof data.username === 'string' &&
-            (typeof data.name === 'string' || typeof data.name === 'undefined') &&
-            typeof data.email === 'string' &&
-            typeof data.role === 'string' &&
-            (typeof data.additionData === 'undefined' || (
-                typeof data.additionData.accountId === 'string' &&
-                (typeof data.additionData.avatarUrl === 'string' || typeof data.additionData.avatarUrl === 'undefined') &&
-                (typeof data.additionData.bio === 'string' || typeof data.additionData.bio === 'undefined')
-            ))
-        ) {
-            return data as Profile
-        } else {
-            console.error("Invalid Profile structure:", data)
-            return null
-        }
-
+export const GetProfile = async (token: string): Promise<getProfileDataResponse> => {
+    if (!token) {
+        console.warn("No token provided, Unable to fetch the Profile")
+        throw new Error("Token was invalid")
     }
-
     try {
-        const response = await axios.get(`${AccountURL}/profile`)
-        const ProfileQuery = validateProfile(response.data)
-        if (ProfileQuery) {
-            return { ok: true, data: { ...ProfileQuery } }
+        console.log("Token was fetched. Token: ", token)
+        const response = await axios.get<getProfileDataResponse>(`${AccountURL}/profile`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            }, 
+            withCredentials: true
+        })
+        console.log("Profile Data: ", response.data)
+        return response.data
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("Get Profile Axios error: ", error.response?.data || error.message)
         } else {
-            return { ok: false, error: "Invalid Profile Structure"}
+            console.error("Unexpected Error: ", error)
         }
-    } catch (error: any) {
-        console.error('Fetch Account Failed: ', error)
-        return { ok: false, error: error.response?.data || 'Failed to fetch the Account'}
+        throw error
     }
 }
 
-export const createProfile = async (ProfileData: Partial<Profile>) => {
-    const validateProfile = (data: Profile) => {
-        if (
-            typeof data.username === 'string' &&
-            (typeof data.name === 'string' || typeof data.name === 'undefined') &&
-            typeof data.email === 'string' &&
-            typeof data.role === 'string' &&
-            (typeof data.additionData === 'undefined' || (
-                typeof data.additionData.accountId === 'string' &&
-                (typeof data.additionData.avatarUrl === 'string' || typeof data.additionData.avatarUrl === 'undefined') &&
-                (typeof data.additionData.bio === 'string' || typeof data.additionData.bio === 'undefined')
-            ))
-        ) {
-            return data as Profile
-        } else {
-            console.error("Invalid Profile Structure: ", data)
-            return null
-        }
-    }
-
+export const CreateProfile = async (dataForm: createProfile, token: string) => {
     try {
-        const response = await axios.post(`${AccountURL}/profile`, ProfileData)
-        const ProfileCreated = validateProfile(response.data)
-        return { ok: true, data: { ...ProfileCreated } }
-    } catch (error: any) {
-        console.error("Error creating the Profile: ", error)
-        return { ok: false, error: error.response?.data || "Failed to make the Profile" }
+        const formData = new FormData()
+        formData.append('bio', dataForm.bio)
+        if (dataForm.avatarUrl) {
+            if (typeof dataForm.avatarUrl === 'string') {
+                formData.append('avatarUrl', dataForm.avatarUrl)
+                console.log('Using existing avatar URL:', dataForm.avatarUrl);
+            } else {
+                formData.append('avatar', dataForm.avatarUrl)
+            }
+        }
+
+        if (token) {
+            console.log("Token being Sent: ", token)
+            const response = await axios.post(`${AccountURL}/create-profile`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                },
+                withCredentials: true
+            })
+            console.log("Data was Posted Successfully: ", response.data)
+            return response.data
+        }
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("Error to post the Data", error.response ? error.response.data : error.message)
+        } else {
+            console.error("Unexpected Error: ", error)
+        }
     }
 }

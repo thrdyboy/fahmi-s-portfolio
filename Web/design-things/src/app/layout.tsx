@@ -3,9 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/ReactToastify.css"
-// import Navbar from "../components/navbar";
 import { AuthProvider } from "<prefix>/context/userContext";
-import { NavigationBar } from "<prefix>/components/navbar";
+import Lsidebar from "<prefix>/components/lsidebar";
+import Wrapper from "<prefix>/components/wrapper";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -34,11 +34,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <NavigationBar />
-          {children}
+          <div className="relative flex w-full min-h-screen">
+            <Wrapper>
+              <div className="hidden lg:block w-64 z-20">
+                <Lsidebar />
+              </div>
+              <main className="relative z-30 flex-grow p-4">{children}</main>
+            </Wrapper>
+          </div>
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
         </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

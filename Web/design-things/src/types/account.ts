@@ -11,22 +11,21 @@ export interface LoginData {
     password: string;
 }
 
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: string;
-    name?: string;
+export enum AccountRole {
+    Author = 'author',
+    User = 'user'
 }
 
-export interface Profile {
-    username: string;
-    email: string;
-    role: string;
-    name?: string;
-    additionData?: {
-        accountId: string;
-        avatarUrl: string;
-        bio: string;
-    } 
+export interface ProfileData {
+    bio: string | null;
+    avatarUrl: string | null;
+}
+
+export interface getProfileDataResponse {
+    data: ProfileData;
+}
+
+export interface createProfile {
+    bio: string;
+    avatarUrl?: File | string;
 }
